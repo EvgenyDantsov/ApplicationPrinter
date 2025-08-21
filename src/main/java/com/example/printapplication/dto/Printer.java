@@ -7,14 +7,16 @@ public class Printer {
     private String snNumber;
     private String note;
     private int officeId;
+    private String status; // Добавляем это поле
 
-    public Printer(int id, String printerName, String model, String snNumber, String note, int officeId) {
+    public Printer(int id, String printerName, String model, String snNumber, String note, String status, int officeId) {
         this.id = id;
         this.printerName = printerName;
         this.model = model;
         this.snNumber = snNumber;
         this.note = note;
         this.officeId = officeId;
+        this.status = status;
     }
 
     public int getId() {
@@ -39,5 +41,9 @@ public class Printer {
 
     public int getOfficeId() {
         return officeId;
+    }
+
+    public String getStatus() {
+        return status;
     }
 }

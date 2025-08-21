@@ -5,6 +5,7 @@ import com.example.printapplication.dao.PrinterDAO;
 
 import com.example.printapplication.dto.Office;
 import com.example.printapplication.dto.Printer;
+import com.example.printapplication.util.WindowUtils;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.HPos;
@@ -36,6 +37,7 @@ public class PrinterWindow {
     private TextField filterOfficeField; // Поле для ввода номера кабинета
     private Button clearFilterButton; // Кнопка для сброса фильтра
     private ComboBox<Office> officeComboBox; // Выпадающий список для выбора номера кабинета
+    private ComboBox<String> statusComboBox;
     private Stage printStage; // Сохраняем родительское окно
     private static final String ERROR_TITLE = "Ошибка";
     private static final String FILL_REQUIRED_FIELDS = "Заполните все обязательные поля.";
@@ -67,8 +69,12 @@ public class PrinterWindow {
         noteColumn.setCellValueFactory(new PropertyValueFactory<>("note"));
         TableColumn<Printer, Integer> officeIdColumn = new TableColumn<>("ID Кабинета");
         officeIdColumn.setCellValueFactory(new PropertyValueFactory<>("officeId"));
+        // Новая колонка для статуса
+        TableColumn<Printer, String> statusColumn = new TableColumn<>("Статус");
+        statusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
+        statusColumn.setCellFactory(createStatusTableCellFactory());
 
-        Collections.addAll(table.getColumns(), idColumn, nameColumn, modelColumn, snColumn, noteColumn, officeIdColumn);
+        Collections.addAll(table.getColumns(), idColumn, nameColumn, modelColumn, snColumn, noteColumn, statusColumn, officeIdColumn);
         // Заполнение таблицы данными
         loadPrints();
         loadOffice(); // Загружаем список отделов
@@ -102,6 +108,13 @@ public class PrinterWindow {
         // Выпадающий список для выбора кабинета
         officeComboBox = new ComboBox<>(officeList);
         officeComboBox.setPromptText("Номер кабинета");
+        // Новый комбобокс для статуса
+        statusComboBox = new ComboBox<>(FXCollections.observableArrayList(
+                "Установлен", "На хранении", "Списан"
+        ));
+        statusComboBox.setPromptText("Статус принтера");
+        statusComboBox.getSelectionModel().selectFirst(); // По умолчанию "Активный"
+
         setupValidationListeners();
         officeComboBox.setConverter(new StringConverter<Office>() {
             @Override
@@ -144,12 +157,13 @@ public class PrinterWindow {
         inputForm.addRow(1, new Label("Серийный номер:"), snNumberField);
         inputForm.addRow(1, new Label("Фильтр по номеру кабинета:"), filterOfficeField);
         inputForm.addRow(2, new Label("Примечание:"), noteField);
-        inputForm.add(clearFilterButton, 3, 2); // Колонка 3, строка 2
-        GridPane.setHalignment(clearFilterButton, HPos.LEFT); // Выравнивание по левому краю
+        inputForm.addRow(2, new Label("Статус:"), statusComboBox);
         inputForm.addRow(3, new Label("Номер кабинета:"), officeComboBox);
+        inputForm.add(clearFilterButton, 3, 3); // Колонка 3, строка 2
+        GridPane.setHalignment(clearFilterButton, HPos.LEFT); // Выравнивание по левому краю
 
         VBox layout = new VBox(10, table, inputForm, buttonsBox);
-        Scene scene = new Scene(layout, 700, 400);
+        Scene scene = new Scene(layout, 800, 500);
         printStage.setScene(scene);
         scene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
         // Позиционирование окна по центру относительно родительского окна
@@ -195,12 +209,13 @@ public class PrinterWindow {
             return;
         }
         PrintFormData printFormData = getPrintFormData();
+        String status = getStatusFromComboBox();
         // Проверка уникальности snNumber
         if (PrinterDAO.isSnNumberUnique(printFormData.snNumber, -1)) { // -1 означает, что это новая запись
             showErrorAlert(printStage, ERROR_TITLE, SN_NUMBER_UNIQUE);
             return;
         }
-        if (PrinterDAO.addPrint(printFormData.printerName, printFormData.model, printFormData.snNumber, printFormData.note, printFormData.office.getId())) {
+        if (PrinterDAO.addPrint(printFormData.printerName, printFormData.model, printFormData.snNumber, printFormData.note, status, printFormData.office.getId())) {
             loadPrints();
             clearFields();
         } else {
@@ -218,12 +233,13 @@ public class PrinterWindow {
             return;
         }
         PrintFormData printFormData = getPrintFormData();
+        String status = getStatusFromComboBox();
         // Проверка уникальности snNumber (исключая текущую запись)
         if (PrinterDAO.isSnNumberUnique(printFormData.snNumber, selectedPrint.getId())) {
             showErrorAlert(printStage, ERROR_TITLE, SN_NUMBER_UNIQUE);
             return;
         }
-        if (PrinterDAO.updatePrint(selectedPrint.getId(), printFormData.printerName, printFormData.model, printFormData.snNumber, printFormData.note, printFormData.office.getId())) {
+        if (PrinterDAO.updatePrint(selectedPrint.getId(), printFormData.printerName, printFormData.model, printFormData.snNumber, printFormData.note, status, printFormData.office.getId())) {
             loadPrints();
             clearFields();
         } else {
@@ -303,7 +319,9 @@ public class PrinterWindow {
         modelField.setText(print.getModel());
         snNumberField.setText(print.getSnNumber());
         noteField.setText(print.getNote());
-
+        // Устанавливаем статус
+        String statusDisplayName = getStatusDisplayName(print.getStatus());
+        statusComboBox.getSelectionModel().select(statusDisplayName);
         // Находим соответствующий Office в списке officeList
         Office selectedOffice = officeList.stream()
                 .filter(office -> office.getId() == print.getOfficeId())
@@ -319,5 +337,14 @@ public class PrinterWindow {
         snNumberField.clear();
         noteField.clear();
         officeComboBox.getSelectionModel().clearSelection();
+    }
+    private String getStatusFromComboBox() {
+        String selectedStatus = statusComboBox.getValue();
+        return switch (selectedStatus) {
+            case "Установлен" -> "active";
+            case "На хранении" -> "in_storage";
+            case "Списан" -> "written_off";
+            default -> "active";
+        };
     }
 }

@@ -41,6 +41,7 @@ public class DatabaseHelper {
                 "    Printer.model, \n" +
                 "    Printer.sn_number, \n" +
                 "    Printer.note, \n" +
+                "    Printer.status, \n" +
                 "    SeniorDepartment.fio,\n" +
                 "    Printer.id\n" +
                 "FROM \n" +
@@ -63,6 +64,7 @@ public class DatabaseHelper {
                         resultSet.getString("model"),
                         resultSet.getString("sn_number"),
                         resultSet.getString("note"),
+                        resultSet.getString("status"),
                         resultSet.getString("fio")
                 );record.setPrinterId(resultSet.getInt("id")); // Устанавливаем ID принтера
                 records.add(record);

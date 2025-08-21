@@ -47,7 +47,7 @@ import java.util.Optional;
 
 import static com.example.printapplication.util.AlertUtils.showErrorAlert;
 import static com.example.printapplication.util.AlertUtils.showInformationAlert;
-import static com.example.printapplication.util.WindowUtils.centerStageOnParent;
+import static com.example.printapplication.util.WindowUtils.*;
 
 public class MainWindow {
     private TableView<MainRecord> table;
@@ -60,6 +60,7 @@ public class MainWindow {
     private TextField modelFilter;
     private TextField snFilter;
     private TextField noteFilter;
+    private TextField statusFilter;
     private TextField fioFilter;
     private FilteredList<MainRecord> filteredData;
     private Label totalPrintersLabel;
@@ -118,9 +119,12 @@ public class MainWindow {
         snColumn.setCellValueFactory(new PropertyValueFactory<>("snNumber"));
         TableColumn<MainRecord, String> noteColumn = new TableColumn<>("Заметки");
         noteColumn.setCellValueFactory(new PropertyValueFactory<>("note"));
+        TableColumn<MainRecord, String> statusColumn = new TableColumn<>("Cтатус");
+        statusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
+        statusColumn.setCellFactory(createStatusTableCellFactory());
         TableColumn<MainRecord, String> fioColumn = new TableColumn<>("Старшая отделения");
         fioColumn.setCellValueFactory(new PropertyValueFactory<>("fio"));
-        Collections.addAll(table.getColumns(), numberOfficeColumn, officeNameColumn, printerColumn, modelColumn, snColumn, departmentColumn, noteColumn, fioColumn);
+        Collections.addAll(table.getColumns(), numberOfficeColumn, officeNameColumn, printerColumn, modelColumn, snColumn, departmentColumn, noteColumn, statusColumn, fioColumn);
         loadAllData();
         filteredData = new FilteredList<>(allDataList, p -> true);
         table.setItems(filteredData);
@@ -147,14 +151,15 @@ public class MainWindow {
         modelFilter = createFilterField("Модель...");
         snFilter = createFilterField("Серийный номер...");
         noteFilter = createFilterField("Заметки...");
+        statusFilter = createFilterField("Статус...");
         fioFilter = createFilterField("Старшая отделения...");
 
-// Добавляем все поля в HBox
-        filterBox.getChildren().addAll(numberOfficeFilter, officeNameFilter, printerFilter, modelFilter, snFilter, departmentFilter, noteFilter, fioFilter);
+        // Добавляем все поля в HBox
+        filterBox.getChildren().addAll(numberOfficeFilter, officeNameFilter, printerFilter, modelFilter, snFilter, departmentFilter, noteFilter, statusFilter, fioFilter);
         statusBar = createStatusBar();
         VBox mainLayout = new VBox(10, topButtons, table, filterBox, bottomExitButton, statusBar);
         VBox.setVgrow(table, Priority.ALWAYS); // Таблица будет растягиваться
-        Scene mainScene = new Scene(mainLayout, 1150, 600);
+        Scene mainScene = new Scene(mainLayout, 1200, 600);
         URL stylesheetUrl = getClass().getResource("/styles.css");
         mainScene.getStylesheets().add(stylesheetUrl != null ? stylesheetUrl.toExternalForm() : "");
         //mainStage.setOnShown(event -> centerStageOnParent(mainStage, primaryStage));
@@ -370,7 +375,7 @@ public class MainWindow {
 
         List<TextField> filters = Arrays.asList(
                 numberOfficeFilter, officeNameFilter, printerFilter,
-                modelFilter, snFilter, departmentFilter, noteFilter, fioFilter
+                modelFilter, snFilter, departmentFilter, noteFilter, statusFilter, fioFilter
         );
 
         ChangeListener<String> filterListener = (observable, oldValue, newValue) -> {
@@ -382,6 +387,7 @@ public class MainWindow {
                             (snFilter.getText().isEmpty() || record.getSnNumber().toLowerCase().contains(snFilter.getText().toLowerCase())) &&
                             (departmentFilter.getText().isEmpty() || record.getNameDepartment().toLowerCase().contains(departmentFilter.getText().toLowerCase())) &&
                             (noteFilter.getText().isEmpty() || record.getNote().toLowerCase().contains(noteFilter.getText().toLowerCase())) &&
+                            (statusFilter.getText().isEmpty() || getStatusDisplayName(record.getStatus()).toLowerCase().contains(statusFilter.getText().toLowerCase())) &&
                             (fioFilter.getText().isEmpty() || record.getFio().toLowerCase().contains(fioFilter.getText().toLowerCase()))
             );
             updateStatusBar();
@@ -403,6 +409,7 @@ public class MainWindow {
         snFilter.setText("");
         departmentFilter.setText("");
         noteFilter.setText("");
+        statusFilter.setText("");
         fioFilter.setText("");
     }
 
@@ -468,7 +475,6 @@ public class MainWindow {
 
     private void loadAllData() {
         allDataList.setAll(DatabaseHelper.getAllView());
-        ;
         table.setItems(allDataList);
         updateStatusBar();
     }
@@ -495,7 +501,8 @@ public class MainWindow {
             row.createCell(4).setCellValue(record.getSnNumber());
             row.createCell(5).setCellValue(record.getNameDepartment());
             row.createCell(6).setCellValue(record.getNote());
-            row.createCell(7).setCellValue(record.getFio());
+            row.createCell(7).setCellValue(record.getStatus());
+            row.createCell(8).setCellValue(record.getFio());
         }
         // Авторазмер для всех столбцов
         for (int i = 0; i < table.getColumns().size(); i++) {

@@ -8,12 +8,14 @@ public class MainRecord {
     private String model;
     private String snNumber;
     private String note;
+    private String status;
     private String fio;
+
     private int printerId;
 
     public MainRecord(String nameOffice, String numberOffice, String nameDepartment,
                       String namePrinter, String model, String snNumber,
-                      String note, String fio) {
+                      String note, String status, String fio) {
         this.nameOffice = nameOffice;
         this.numberOffice = numberOffice;
         this.nameDepartment = nameDepartment;
@@ -21,6 +23,7 @@ public class MainRecord {
         this.model = model;
         this.snNumber = snNumber;
         this.note = note;
+        this.status=status;
         this.fio = fio;
     }
 
@@ -51,6 +54,9 @@ public class MainRecord {
 
     public String getNote() {
         return note;
+    }
+    public String getStatus() {
+        return status;
     }
 
     public String getFio() {
