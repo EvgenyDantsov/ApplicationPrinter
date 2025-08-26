@@ -5,7 +5,6 @@ import com.example.printapplication.dao.OfficeDAO;
 import com.example.printapplication.dao.PrinterDAO;
 import com.example.printapplication.dto.MainRecord;
 import com.example.printapplication.dto.Office;
-import javafx.animation.*;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
@@ -19,12 +18,8 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Shape;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import javafx.util.Duration;
-import javafx.util.Pair;
 import javafx.util.StringConverter;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -69,6 +64,8 @@ public class MainWindow {
     private Label totalFilteredLabel;
     private Label lastUpdateLabel;
     private Label totalOfficesLabel;
+    private Label totalStorageLabel;
+    private Label totalWrittenOffLabel;
     private ToolBar statusBar;
 
     public void start(Stage mainStage, Stage primaryStage) {
@@ -184,23 +181,29 @@ public class MainWindow {
         Label departmentIcon = createIconLabel("\uD83C\uDFDB", "Отделения: 0");
         Label responsibleIcon = createIconLabel("\uD83D\uDC68\u200D\uD83D\uDCBC", "Ответственные: 0");
         Label officeIcon = createIconLabel("\uD83D\uDEAA", "Кабинеты: 0");
+        Label storageIcon = createIconLabel("\uD83D\uDCE6", "На хранении: 0"); // 📦
+        Label writtenOffIcon = createIconLabel("❌", "Списано: 0"); // 📛
         totalFilteredLabel = new Label("📋 0/0");
         lastUpdateLabel = new Label("🕐 --:--");
         totalPrintersLabel = printerIcon;
         totalDepartmentsLabel = departmentIcon;
         totalResponsiblesLabel = responsibleIcon;
         totalOfficesLabel = officeIcon;
+        totalStorageLabel = storageIcon;
+        totalWrittenOffLabel = writtenOffIcon;
 
         // Стилизуем метки
         totalPrintersLabel.getStyleClass().add("status-item");
         totalDepartmentsLabel.getStyleClass().add("status-item");
         totalResponsiblesLabel.getStyleClass().add("status-item");
         totalOfficesLabel.getStyleClass().add("status-item");
+        totalStorageLabel.getStyleClass().add("status-item");
+        totalWrittenOffLabel.getStyleClass().add("status-item");
         totalFilteredLabel.getStyleClass().add("status-item");
         lastUpdateLabel.getStyleClass().add("status-item-right");
 
         // Добавляем разделители с кастомными стилями
-        Separator[] separators = new Separator[5];
+        Separator[] separators = new Separator[7];
         for (int i = 0; i < separators.length; i++) {
             separators[i] = createStyledSeparator();
         }
@@ -213,6 +216,8 @@ public class MainWindow {
                 totalDepartmentsLabel, separators[2],
                 totalResponsiblesLabel, separators[3],
                 totalOfficesLabel, separators[4],
+                totalStorageLabel, separators[5],     // Новое
+                totalWrittenOffLabel, separators[6],
                 spacer,
                 lastUpdateLabel
         );
@@ -240,6 +245,12 @@ public class MainWindow {
 
         // Обновляем статистику
         int printerCount = filteredData.size();
+        long storageCount = filteredData.stream()
+                .filter(record -> "in_storage".equals(record.getStatus()))
+                .count();
+        long writtenOffCount = filteredData.stream()
+                .filter(record -> "written_off".equals(record.getStatus()))
+                .count();
         long departmentCount = filteredData.stream()
                 .map(MainRecord::getNameDepartment)
                 .distinct()
@@ -260,6 +271,8 @@ public class MainWindow {
         totalDepartmentsLabel.setText("\uD83C\uDFDB Отделения: " + departmentCount);
         totalResponsiblesLabel.setText("\uD83D\uDC68\u200D\uD83D\uDCBC Ответственные: " + responsibleCount);
         totalOfficesLabel.setText("\uD83D\uDEAA Кабинеты: " + officeCount);
+        totalStorageLabel.setText("\uD83D\uDCE6 На хранении: " + storageCount);      // Новое
+        totalWrittenOffLabel.setText("❌ Списано: " + writtenOffCount);    // Новое
         totalFilteredLabel.setText("📋 " + filteredCount + "/" + totalCount);
         lastUpdateLabel.setText("🕐 " + LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm")));
     }
@@ -292,15 +305,14 @@ public class MainWindow {
         // Получаем список всех кабинетов и проверяем на null
         ObservableList<Office> offices = FXCollections.observableArrayList();
         List<Office> allOffices = OfficeDAO.getAllOffice();
-        if (allOffices != null) {
-            offices.addAll(allOffices);
-        }
+        offices.addAll(allOffices);
 
         // Создаем диалоговое окно для выбора нового кабинета
         Dialog<Boolean> dialog = new Dialog<>();
         dialog.setTitle("Перемещение принтера");
         dialog.setHeaderText("Перемещение принтера: " + selectedRecord.getNamePrinter() +
-                "\nТекущий кабинет: " + selectedRecord.getNumberOffice());
+                "\nТекущий кабинет: " + selectedRecord.getNumberOffice() +
+                "\nТекущий статус: " + getStatusDisplayName(selectedRecord.getStatus()));
 
         ButtonType moveButtonType = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(moveButtonType, ButtonType.CANCEL);
@@ -319,38 +331,64 @@ public class MainWindow {
             }
         });
 
+        Office currentOffice = offices.stream()
+                .filter(office -> office.getNumberOffice().equals(selectedRecord.getNumberOffice())).findFirst()
+                .orElse(null);
+        officeCombo.setValue(currentOffice);        // Добавляем комбобокс для выбора статуса
+        ComboBox<String> statusCombo = new ComboBox<>(FXCollections.observableArrayList(
+                "Установлен", "На хранении", "Списан"));
+
+        statusCombo.setPromptText("Выберите статус");
+        String currentStatusDisplay = getStatusDisplayName(selectedRecord.getStatus());
+        statusCombo.getSelectionModel().select(currentStatusDisplay);
+
+        TextField noteField = new TextField();
+        noteField.setPromptText("Введите примечание");
+        noteField.setText(selectedRecord.getNote() != null ? selectedRecord.getNote() : "");
+
         // Устанавливаем обработчик для предотвращения выбора null значения
         officeCombo.valueProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal == null) {
                 officeCombo.setValue(oldVal);
             }
         });
-        TextField noteField = new TextField();
-        noteField.setPromptText("Введите примечание");
         // Устанавливаем текущее примечание из выбранного принтера
-        noteField.setText(selectedRecord.getNote() != null ? selectedRecord.getNote() : "");
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(10);
         grid.add(new Label("Новый кабинет:"), 0, 0);
         grid.add(officeCombo, 1, 0);
-        grid.add(new Label("Примечание:"), 0, 1);
-        grid.add(noteField, 1, 1);
+        grid.add(new Label("Новый статус:"), 0, 1);
+        grid.add(statusCombo, 1, 1);
+        grid.add(new Label("Примечание:"), 0, 2);
+        grid.add(noteField, 1, 2);
         dialog.getDialogPane().setContent(grid);
 
         Platform.runLater(officeCombo::requestFocus);
 
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == moveButtonType) {
+                // Получаем выбранный статус и преобразуем в формат БД
+                String selectedStatus = statusCombo.getValue();
+                String statusDb = switch (selectedStatus) {
+                    case "Установлен" -> "active";
+                    case "На хранении" -> "in_storage";
+                    case "Списан" -> "written_off";
+                    default -> selectedRecord.getStatus();
+                };
+
                 // Формируем обновленное примечание
                 String updatedNote = noteField.getText();
-                if (!updatedNote.isEmpty()) {
-                    updatedNote += "\n";
+
+                // Если статус изменился, добавляем информацию в примечание
+                if (!selectedRecord.getStatus().equals(statusDb)) {
+                    if (!updatedNote.isEmpty()) {
+                        updatedNote += "\n";
+                    }
                 }
-                // Возвращаем результат операции
                 return PrinterDAO.movePrinter(selectedRecord.getPrinterId(),
                         officeCombo.getValue().getId(),
-                        updatedNote);
+                        updatedNote, statusDb);
             }
             return false;
         });
@@ -367,7 +405,6 @@ public class MainWindow {
                 showErrorAlert(mainStage, "Ошибка", "Не удалось переместить принтер");
             }
         });
-
     }
 
     private void setupFiltering() {
@@ -501,7 +538,7 @@ public class MainWindow {
             row.createCell(4).setCellValue(record.getSnNumber());
             row.createCell(5).setCellValue(record.getNameDepartment());
             row.createCell(6).setCellValue(record.getNote());
-            String statusInRussian=getStatusDisplayName(record.getStatus());
+            String statusInRussian = getStatusDisplayName(record.getStatus());
             row.createCell(7).setCellValue(statusInRussian);
             row.createCell(8).setCellValue(record.getFio());
         }

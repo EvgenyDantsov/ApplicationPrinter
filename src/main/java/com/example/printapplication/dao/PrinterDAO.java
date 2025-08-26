@@ -139,15 +139,16 @@ public class PrinterDAO {
             return false;
         }
     }
-    public static boolean movePrinter(int printerId, int newOfficeId, String note) {
-        String sql = "UPDATE Printer SET Office_id = ?, note = ? WHERE id = ?";
+    public static boolean movePrinter(int printerId, int newOfficeId, String note, String newStatus) {
+        String sql = "UPDATE Printer SET Office_id = ?, note = ?, status = ? WHERE id = ?";
 
         try (Connection conn = DatabaseHelper.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, newOfficeId);
             pstmt.setString(2, note);
-            pstmt.setInt(3, printerId);
+            pstmt.setString(3,newStatus);
+            pstmt.setInt(4, printerId);
 
             int affectedRows = pstmt.executeUpdate();
             return affectedRows > 0;
