@@ -73,9 +73,6 @@ public class MainWindow {
         mainStage.setTitle("Главное окно");
         // Инициализация UI компонентов
         initializeUI();
-
-        // Уже загруженные данные просто отображаем
-        //table.setItems(allDataList);
         setupFiltering();
         setupContextMenu();
 
@@ -159,7 +156,6 @@ public class MainWindow {
         Scene mainScene = new Scene(mainLayout, 1200, 600);
         URL stylesheetUrl = getClass().getResource("/styles.css");
         mainScene.getStylesheets().add(stylesheetUrl != null ? stylesheetUrl.toExternalForm() : "");
-        //mainStage.setOnShown(event -> centerStageOnParent(mainStage, primaryStage));
         setupFiltering();
         setupContextMenu();
         mainStage.setScene(mainScene);
@@ -191,7 +187,28 @@ public class MainWindow {
         totalOfficesLabel = officeIcon;
         totalStorageLabel = storageIcon;
         totalWrittenOffLabel = writtenOffIcon;
+// Добавляем клики на "На хранении" и "Списано"
+        totalStorageLabel.setOnMouseClicked(e -> {
+            if (filteredData != null) {
+                filteredData.setPredicate(record -> "in_storage".equals(record.getStatus()));
+                updateStatusBar();
+            }
+        });
 
+        totalWrittenOffLabel.setOnMouseClicked(e -> {
+            if (filteredData != null) {
+                filteredData.setPredicate(record -> "written_off".equals(record.getStatus()));
+                updateStatusBar();
+            }
+        });
+
+        // Если нужно вернуться к полному списку при клике на "Принтеры"
+        totalPrintersLabel.setOnMouseClicked(e -> {
+            if (filteredData != null) {
+                filteredData.setPredicate(record -> true);
+                updateStatusBar();
+            }
+        });
         // Стилизуем метки
         totalPrintersLabel.getStyleClass().add("status-item");
         totalDepartmentsLabel.getStyleClass().add("status-item");
@@ -224,7 +241,6 @@ public class MainWindow {
 
         return statusBar;
     }
-
     private Label createIconLabel(String icon, String text) {
         Label label = new Label(icon + " " + text);
         label.setContentDisplay(ContentDisplay.LEFT);
