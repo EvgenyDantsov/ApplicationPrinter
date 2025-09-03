@@ -1,16 +1,15 @@
 package com.example.printapplication.window;
 
+import com.example.printapplication.dao.EquipmentTypeDAO;
 import com.example.printapplication.dao.OfficeDAO;
 import com.example.printapplication.dao.PrinterDAO;
 
+import com.example.printapplication.dto.EquipmentType;
 import com.example.printapplication.dto.Office;
 import com.example.printapplication.dto.Printer;
-import com.example.printapplication.util.WindowUtils;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.HPos;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -30,6 +29,7 @@ public class PrinterWindow {
     private TableView<Printer> table;
     private ObservableList<Printer> printList;
     private ObservableList<Office> officeList; // Список кабинетов
+    private ObservableList<EquipmentType> equipmentTypeList;
     private TextField printNameField;
     private TextField modelField;
     private TextField snNumberField;
@@ -38,6 +38,7 @@ public class PrinterWindow {
     private Button clearFilterButton; // Кнопка для сброса фильтра
     private ComboBox<Office> officeComboBox; // Выпадающий список для выбора номера кабинета
     private ComboBox<String> statusComboBox;
+    private ComboBox<EquipmentType> equipmentTypeComboBox;
     private Stage printStage; // Сохраняем родительское окно
     private static final String ERROR_TITLE = "Ошибка";
     private static final String FILL_REQUIRED_FIELDS = "Заполните все обязательные поля.";
@@ -47,6 +48,7 @@ public class PrinterWindow {
     private static final String UPDATE_PRINTER_FAILED = "Не удалось обновить принтер.";
     private static final String SELECT_OFFICE = "Выберите номер кабинета.";
     private static final String SELECT_PRINTER_TO_DELETE = "Выберите принтер для удаления.";
+    private static final String SELECT_EQUIPMENT_TYPE = "Выберите тип оборудования."; // NEW
 
     public void start(Stage printStage, Stage parentStage) {
         this.printStage = printStage;
@@ -55,6 +57,7 @@ public class PrinterWindow {
         table = new TableView<>();
         printList = FXCollections.observableArrayList();
         officeList = FXCollections.observableArrayList(); // Инициализация списка отделов
+        equipmentTypeList = FXCollections.observableArrayList();
 
         // Колонки таблицы
         TableColumn<Printer, Integer> idColumn = new TableColumn<>("ID");
@@ -73,11 +76,14 @@ public class PrinterWindow {
         TableColumn<Printer, String> statusColumn = new TableColumn<>("Статус");
         statusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
         statusColumn.setCellFactory(createStatusTableCellFactory());
+        TableColumn<Printer, Integer> equipmentTypeColumn = new TableColumn<>("Тип оборудования"); // NEW
+        equipmentTypeColumn.setCellValueFactory(new PropertyValueFactory<>("equipmentTypeId")); // NEW
 
-        Collections.addAll(table.getColumns(), idColumn, nameColumn, modelColumn, snColumn, noteColumn, statusColumn, officeIdColumn);
+        Collections.addAll(table.getColumns(), idColumn, nameColumn, modelColumn, snColumn, noteColumn, statusColumn, officeIdColumn, equipmentTypeColumn);
         // Заполнение таблицы данными
         loadPrints();
         loadOffice(); // Загружаем список отделов
+        loadEquipmentTypes();
 
         // Поля для ввода данных
         printNameField = new TextField();
@@ -114,8 +120,23 @@ public class PrinterWindow {
         ));
         statusComboBox.setPromptText("Статус принтера");
         statusComboBox.getSelectionModel().selectFirst(); // По умолчанию "Активный"
-
+        equipmentTypeComboBox = new ComboBox<>(equipmentTypeList); // NEW
+        equipmentTypeComboBox.setPromptText("Тип оборудования");
         setupValidationListeners();
+        equipmentTypeComboBox.setConverter(new StringConverter<>() {
+            @Override
+            public String toString(EquipmentType type) {
+                return type != null ? type.getName() : "";
+            }
+
+            @Override
+            public EquipmentType fromString(String string) {
+                return equipmentTypeList.stream()
+                        .filter(t -> t.getName().equals(string))
+                        .findFirst()
+                        .orElse(null);
+            }
+        });
         officeComboBox.setConverter(new StringConverter<Office>() {
             @Override
             public String toString(Office office) {
@@ -159,11 +180,12 @@ public class PrinterWindow {
         inputForm.addRow(2, new Label("Примечание:"), noteField);
         inputForm.addRow(2, new Label("Статус:"), statusComboBox);
         inputForm.addRow(3, new Label("Номер кабинета:"), officeComboBox);
-        inputForm.add(clearFilterButton, 3, 3); // Колонка 3, строка 2
+        inputForm.addRow(4, new Label("Тип оборудования:"), equipmentTypeComboBox); // NEW
+        inputForm.add(clearFilterButton, 3, 3); // Колонка 3, строка 3
         GridPane.setHalignment(clearFilterButton, HPos.LEFT); // Выравнивание по левому краю
 
         VBox layout = new VBox(10, table, inputForm, buttonsBox);
-        Scene scene = new Scene(layout, 800, 500);
+        Scene scene = new Scene(layout, 900, 550);
         printStage.setScene(scene);
         scene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
         // Позиционирование окна по центру относительно родительского окна
@@ -176,7 +198,9 @@ public class PrinterWindow {
         printList.setAll(PrinterDAO.getAllPrints());
         table.setItems(printList);
     }
-
+    private void loadEquipmentTypes() {
+        equipmentTypeList.setAll(EquipmentTypeDAO.getAllEquipmentTypes());
+    }
     // Метод для фильтрации таблицы по номеру кабинета
     private void filterTableByOfficeNumber(String officeNumber) {
         ObservableList<Printer> filteredList = printList.filtered(p -> {
@@ -208,6 +232,11 @@ public class PrinterWindow {
             showErrorAlert(printStage, ERROR_TITLE, SELECT_OFFICE);
             return;
         }
+        if (equipmentTypeComboBox.getValue() == null) { // NEW
+            highlightInvalidComboBox(equipmentTypeComboBox);
+            showErrorAlert(printStage, ERROR_TITLE, SELECT_EQUIPMENT_TYPE);
+            return;
+        }
         PrintFormData printFormData = getPrintFormData();
         String status = getStatusFromComboBox();
         // Проверка уникальности snNumber
@@ -215,7 +244,7 @@ public class PrinterWindow {
             showErrorAlert(printStage, ERROR_TITLE, SN_NUMBER_UNIQUE);
             return;
         }
-        if (PrinterDAO.addPrint(printFormData.printerName, printFormData.model, printFormData.snNumber, printFormData.note, status, printFormData.office.getId())) {
+        if (PrinterDAO.addPrint(printFormData.printerName, printFormData.model, printFormData.snNumber, printFormData.note, status, printFormData.office.getId(), printFormData.equipmentType.getId())) {
             loadPrints();
             clearFields();
         } else {
@@ -239,7 +268,7 @@ public class PrinterWindow {
             showErrorAlert(printStage, ERROR_TITLE, SN_NUMBER_UNIQUE);
             return;
         }
-        if (PrinterDAO.updatePrint(selectedPrint.getId(), printFormData.printerName, printFormData.model, printFormData.snNumber, printFormData.note, status, printFormData.office.getId())) {
+        if (PrinterDAO.updatePrint(selectedPrint.getId(), printFormData.printerName, printFormData.model, printFormData.snNumber, printFormData.note, status, printFormData.office.getId(),printFormData.equipmentType.getId())) {
             loadPrints();
             clearFields();
         } else {
@@ -296,21 +325,24 @@ public class PrinterWindow {
         String snNumber = snNumberField.getText();
         String note = noteField.getText();
         Office selectedOffice = officeComboBox.getValue();
+        EquipmentType selectedType = equipmentTypeComboBox.getValue();
 
-        return new PrintFormData(printerName, model, snNumber, note, selectedOffice);
+        return new PrintFormData(printerName, model, snNumber, note, selectedOffice, selectedType);
     }
 
     // Вспомогательный класс для хранения данных формы
     private static class PrintFormData {
         String printerName, model, snNumber, note;
         Office office;
+        EquipmentType equipmentType;
 
-        PrintFormData(String printerName, String model, String snNumber, String note, Office office) {
+        PrintFormData(String printerName, String model, String snNumber, String note, Office office, EquipmentType equipmentType) {
             this.printerName = printerName;
             this.model = model;
             this.snNumber = snNumber;
             this.note = note;
             this.office = office;
+            this.equipmentType = equipmentType;
         }
     }
 
@@ -328,6 +360,11 @@ public class PrinterWindow {
                 .findFirst()
                 .orElse(null);
         officeComboBox.getSelectionModel().select(selectedOffice);
+        EquipmentType selectedType = equipmentTypeList.stream()
+                .filter(et -> et.getId() == print.getEquipmentTypeId())
+                .findFirst()
+                .orElse(null);
+        equipmentTypeComboBox.getSelectionModel().select(selectedType);
     }
 
     // Очистка полей ввода
@@ -337,6 +374,7 @@ public class PrinterWindow {
         snNumberField.clear();
         noteField.clear();
         officeComboBox.getSelectionModel().clearSelection();
+        equipmentTypeComboBox.getSelectionModel().clearSelection();
     }
     private String getStatusFromComboBox() {
         String selectedStatus = statusComboBox.getValue();

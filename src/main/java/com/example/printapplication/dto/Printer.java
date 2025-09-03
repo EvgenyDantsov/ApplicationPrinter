@@ -7,9 +7,10 @@ public class Printer {
     private String snNumber;
     private String note;
     private int officeId;
-    private String status; // Добавляем это поле
+    private String status;
+    private int equipmentTypeId;
 
-    public Printer(int id, String printerName, String model, String snNumber, String note, String status, int officeId) {
+    public Printer(int id, String printerName, String model, String snNumber, String note, String status, int officeId, int equipmentTypeId) {
         this.id = id;
         this.printerName = printerName;
         this.model = model;
@@ -17,6 +18,7 @@ public class Printer {
         this.note = note;
         this.officeId = officeId;
         this.status = status;
+        this.equipmentTypeId=equipmentTypeId;
     }
 
     public int getId() {
@@ -45,5 +47,8 @@ public class Printer {
 
     public String getStatus() {
         return status;
+    }
+    public int getEquipmentTypeId() {
+        return equipmentTypeId;
     }
 }
