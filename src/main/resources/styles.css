@@ -7,7 +7,41 @@
 .vbox, .hbox, .grid-pane, .border-pane {
     -fx-background-color: #2d3748;
 }
+/* Стиль для меню-бара */
+.menu-bar {
+    -fx-background-color: linear-gradient(to bottom, #1a202c, #2d3748);
+    -fx-border-color: #718096;
+    -fx-border-width: 0 0 2px 0; /* нижняя граница */
+    -fx-padding: 6px 12px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 4, 0, 0, 1);
+}
 
+/* Стиль пунктов меню */
+.menu-bar .menu {
+    -fx-background-color: transparent;
+    -fx-text-fill: #e2e8f0;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-padding: 5px 12px;
+}
+
+.menu-bar .menu:hover {
+    -fx-background-color: #4a5568;
+    -fx-text-fill: white;
+    -fx-background-radius: 4px;
+}
+
+/* Выпадающее подменю */
+.menu-bar .menu .menu-item {
+    -fx-background-color: #2d3748;
+    -fx-text-fill: #e2e8f0;
+    -fx-padding: 5px 10px;
+}
+
+.menu-bar .menu .menu-item:hover {
+    -fx-background-color: #805ad5;
+    -fx-text-fill: white;
+}
 /* Стиль для кнопок (верхняя панель) */
 .button {
     -fx-background-color: #4a5568;
