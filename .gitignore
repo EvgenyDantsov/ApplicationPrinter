@@ -4,7 +4,7 @@ target/
 !**/src/test/**/target/
 
 ### IntelliJ IDEA ###
-# Файлы IDE
+# пїЅпїЅпїЅпїЅпїЅ IDE
 .idea/
 .idea/modules.xml
 .idea/jarRepositories.xml
@@ -14,14 +14,17 @@ target/
 *.iml
 *.ipr
 
-# Файлы MySQL Workbench
+# пїЅпїЅпїЅпїЅпїЅ MySQL Workbench
 Print.mwb
 Print.mwb.bak
+Print_new.mwb
+Print_new.mwb.bak
 
-# Maven файлы
+
+# Maven пїЅпїЅпїЅпїЅпїЅ
 dependency-reduced-pom.xml
 
-# Выходные директории компиляции
+# пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 out/
 META-INF/
 
