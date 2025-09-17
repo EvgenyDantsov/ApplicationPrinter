@@ -19,7 +19,7 @@ public class HelloApplication extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        primaryStage.setTitle("Учет принтеров");
+        primaryStage.setTitle("Учет оборудования");
 
         // Создание кнопок для начального окна
         Button startButton = new Button("Начать");
