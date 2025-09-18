@@ -20,15 +20,21 @@ public class FieldValidator {
         }
     }
 
-    public static void highlightInvalidComboBox(ComboBox<?> comboBox) {
-        if (comboBox.getValue() == null) {
-            comboBox.getStyleClass().add("invalid-combo");
-        } else {
-            comboBox.getStyleClass().remove("invalid-combo");
+    public static void highlightInvalidComboBox(ComboBox<?>... comboBoxes) {
+        for (ComboBox<?> comboBox : comboBoxes) {
+            if (comboBox.getValue() == null) {
+                if (!comboBox.getStyleClass().contains("invalid-combo")) {
+                    comboBox.getStyleClass().add("invalid-combo");
+                }
+            } else {
+                comboBox.getStyleClass().remove("invalid-combo");
+            }
         }
     }
 
-    public static void clearComboBoxStyle(ComboBox<?> comboBox) {
-        comboBox.getStyleClass().remove("invalid-combo");
+    public static void clearComboBoxStyle(ComboBox<?>... comboBoxes) {
+        for (ComboBox<?> comboBox : comboBoxes) {
+            comboBox.getStyleClass().remove("invalid-combo");
+        }
     }
 }
