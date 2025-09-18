@@ -4,7 +4,6 @@ import com.example.printapplication.dao.DepartmentDAO;
 import com.example.printapplication.dao.OfficeDAO;
 import com.example.printapplication.dto.Department;
 import com.example.printapplication.dto.Office;
-import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.Scene;
