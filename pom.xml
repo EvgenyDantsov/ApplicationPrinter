@@ -121,7 +121,7 @@
                         <configuration>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>com.example.printapplication.HelloApplication</mainClass>
+                                    <mainClass>com.example.equipmentapplication.HelloApplication</mainClass>
                                 </transformer>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                             </transformers>
@@ -149,7 +149,7 @@
                     <execution>
                         <id>default-cli</id>
                         <configuration>
-                            <mainClass>com.example.printapplication.HelloApplication</mainClass>
+                            <mainClass>com.example.equipmentapplication.HelloApplication</mainClass>
                             <modulePath>C:/javafx-sdk-21/lib</modulePath>
                             <addModules>javafx.controls,javafx.fxml</addModules>
                         </configuration>
